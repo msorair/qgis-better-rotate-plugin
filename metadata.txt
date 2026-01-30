@@ -1,0 +1,14 @@
+[general]
+name=Better Rotate
+qgisMinimumVersion=3.0
+description=Advanced rotation tool with custom coordinate system and rotation center
+version=1.0
+author=Custom Plugin
+email=user@example.com
+
+about=Interactive rotation of selected features with user-defined coordinate system and rotation center. Ctrl+Click to set rotation center, Click to rotate.
+
+tracker=http://bugs
+repository=http://repo
+category=Vector
+
