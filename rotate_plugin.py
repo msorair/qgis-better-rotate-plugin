@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from typing import Optional, Literal
 
 from qgis.PyQt.QtWidgets import QAction, QWidget, QHBoxLayout, QLabel, QDoubleSpinBox, QComboBox
+from qgis.PyQt.QtGui import QIcon
 from qgis.gui import QgsProjectionSelectionWidget
 from qgis.core import QgsProject
 from .rotate_tool import RotateMapTool
@@ -21,27 +23,24 @@ class RotatePlugin:
         self.toolbar = self.iface.addToolBar("BetterRotateToolbar")
         self.toolbar.setObjectName("BetterRotateToolbar")
 
-        # UI elements (only exist while tool is active)
         self.input_widget: Optional[QWidget] = None
         self.crs_widget: Optional[QgsProjectionSelectionWidget] = None
         self.angle_input: Optional[QDoubleSpinBox] = None
         self.mode_combo: Optional[QComboBox] = None
     
     def initGui(self):
-        self.action = QAction("Better Rotate", self.iface.mainWindow())
+        icon_path = os.path.join(os.path.dirname(__file__), "better_rotate.svg")
+        self.action = QAction(QIcon(icon_path), "Better Rotate", self.iface.mainWindow())
         self.action.setStatusTip("Rotate features with custom coordinate system")
         self.action.setToolTip("Click to select/rotate. Ctrl+Click to set center. ")
         self.action.setCheckable(True)
         self.action.triggered.connect(self.activateTool)
         
-        # Add to toolbar
         self.toolbar.addAction(self.action)
         
-        # Create map tool
         self.tool = RotateMapTool(self, self.canvas, self.iface)
         self.tool.deactivated.connect(self.onToolDeactivated)
 
-        # Monitor layer changes
         self.iface.currentLayerChanged.connect(self.onCurrentLayerChanged)
         self.onCurrentLayerChanged(self.iface.activeLayer())
     
@@ -162,7 +161,7 @@ class RotatePlugin:
     def getRotationMode(self) -> RotationMode:
         if not self.mode_combo:
             return "group"
-        return (self.mode_combo.currentData() or "group")  # type: ignore[return-value]
+        return (self.mode_combo.currentData() or "group")
     
     def getRotationAngle(self):
         if not self.angle_input:
@@ -194,12 +193,10 @@ class RotatePlugin:
         except Exception:
             pass
 
-        # Remove action
         if self.action:
             self.iface.removeToolBarIcon(self.action)
             self.action = None
         
-        # Remove widget
         self._disposeInputWidget()
         
         # Clean up tool

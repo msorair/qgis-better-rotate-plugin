@@ -122,9 +122,6 @@ class RotateMapTool(QgsMapTool):
 
         if self.is_rotating or self.features_to_rotate:
             self.cancelOperation()
-            self.iface.messageBar().pushMessage(
-                "Layer changed", level=1, duration=2
-            )
         self.layer = new_layer
         self._connectSelectionChanged(new_layer)
 
@@ -165,12 +162,8 @@ class RotateMapTool(QgsMapTool):
 
         if self.is_rotating:
             self.cancelOperation()
-            self.iface.messageBar().pushMessage(
-                "Selection changed", level=1, duration=2
-            )
             return
 
-        # Not rotating: update selection state
         self.features_to_rotate = list(layer.getSelectedFeatures())
         self.rotation_center = None
         self._clearCaches()
@@ -219,7 +212,6 @@ class RotateMapTool(QgsMapTool):
     def _getTransforms(self, layer, target_crs):
         canvas_crs = self.canvas.mapSettings().destinationCrs()
 
-        # Cache key uses CRS identifiers; fallback to WKT if needed.
         def crs_key(crs):
             return crs.authid() or str(crs.srsid()) or crs.toWkt()
 
@@ -331,7 +323,7 @@ class RotateMapTool(QgsMapTool):
             if self.features_to_rotate:
                 if self._getRotationMode() == "individual":
                     self.iface.messageBar().pushMessage(
-                        "Individual mode: custom center ignored", level=1, duration=2
+                        "Individual mode: custom center ignored", level=0, duration=2
                     )
                     return
                 self.rotation_center = point
@@ -379,7 +371,7 @@ class RotateMapTool(QgsMapTool):
                     self.calculateCenter()
                 else:
                     self.iface.messageBar().pushMessage(
-                        "No features found", level=1, duration=2
+                        "No features found", level=0, duration=2
                     )
                     return
 
@@ -485,9 +477,6 @@ class RotateMapTool(QgsMapTool):
     def _onRotationModeChanged(self):
         if self.is_rotating:
             self.cancelOperation()
-            self.iface.messageBar().pushMessage(
-                "Mode changed", level=1, duration=2
-            )
             return
 
         self._clearCaches()
