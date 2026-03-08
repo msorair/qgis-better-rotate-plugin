@@ -12,7 +12,7 @@ from qgis.core import (
     QgsWkbTypes,
     QgsRectangle,
     QgsVectorLayer,
-    QgsFeature
+    QgsFeature,
 )
 from qgis.gui import QgsMapTool, QgsVertexMarker, QgsRubberBand
 from qgis.PyQt.QtCore import Qt, pyqtSignal
@@ -215,14 +215,25 @@ class RotateMapTool(QgsMapTool):
         def crs_key(crs):
             return crs.authid() or str(crs.srsid()) or crs.toWkt()
 
-        key = (id(layer), crs_key(layer.crs()), crs_key(canvas_crs), crs_key(target_crs))
+        key = (
+            id(layer),
+            crs_key(layer.crs()),
+            crs_key(canvas_crs),
+            crs_key(target_crs),
+        )
         if key == self._cache.transforms_key and self._cache.transforms is not None:
             return self._cache.transforms
 
         source_crs = layer.crs()
-        source_to_target = QgsCoordinateTransform(source_crs, target_crs, QgsProject.instance())
-        canvas_to_target = QgsCoordinateTransform(canvas_crs, target_crs, QgsProject.instance())
-        target_to_source = QgsCoordinateTransform(target_crs, source_crs, QgsProject.instance())
+        source_to_target = QgsCoordinateTransform(
+            source_crs, target_crs, QgsProject.instance()
+        )
+        canvas_to_target = QgsCoordinateTransform(
+            canvas_crs, target_crs, QgsProject.instance()
+        )
+        target_to_source = QgsCoordinateTransform(
+            target_crs, source_crs, QgsProject.instance()
+        )
 
         self._cache.transforms_key = key
         self._cache.transforms = _Transforms(
@@ -292,7 +303,11 @@ class RotateMapTool(QgsMapTool):
         layer = self._getLayer()
         if not layer:
             return
-        ct = QgsCoordinateTransform(layer.crs(), self.canvas.mapSettings().destinationCrs(), QgsProject.instance())
+        ct = QgsCoordinateTransform(
+            layer.crs(),
+            self.canvas.mapSettings().destinationCrs(),
+            QgsProject.instance(),
+        )
         self.rotation_center = ct.transform(rotation_center)
         self.updateCenterMarker(self.rotation_center)
 
@@ -361,7 +376,9 @@ class RotateMapTool(QgsMapTool):
 
                 canvas_crs = self.canvas.mapSettings().destinationCrs()
                 layer_crs = lyr.crs()
-                ct = QgsCoordinateTransform(canvas_crs, layer_crs, QgsProject.instance())
+                ct = QgsCoordinateTransform(
+                    canvas_crs, layer_crs, QgsProject.instance()
+                )
                 search_rect_layer = ct.transformBoundingBox(search_rect_canvas)
 
                 req = lyr.getFeatures(search_rect_layer)

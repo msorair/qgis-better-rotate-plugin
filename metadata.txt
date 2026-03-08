@@ -7,7 +7,17 @@ author=msorair
 email=sorair42@gmail.com
 icon=better_rotate.svg
 
-about=Interactive rotation of selected features with user-defined coordinate system and rotation center. Ctrl+Click to set rotation center, Click to rotate.
+about=
+  Interactive rotation of selected features with user-defined coordinate system and rotation center. 
+
+  Rotation center
+    1) Group center: rotate all selected features around a single shared center. You can set a custom center with Ctrl + Left Click.
+    2) Individual centers: rotate each feature around its own centroid.
+
+  Rotate in a chosen CRS
+    Geometries sometimes need to be rotated in a projected Target CRS instead of a geographic (Lat/Lon) CRS. This avoids distortion before transforming the results back to the source layer CRS for output.
+
+
 
 tracker=https://github.com/msorair/qgis_better_rotate_tool/issues
 repository=https://github.com/msorair/qgis_better_rotate_tool

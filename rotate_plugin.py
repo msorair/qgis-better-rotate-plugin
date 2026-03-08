@@ -3,7 +3,14 @@ from __future__ import annotations
 import os
 from typing import Optional, Literal
 
-from qgis.PyQt.QtWidgets import QAction, QWidget, QHBoxLayout, QLabel, QDoubleSpinBox, QComboBox
+from qgis.PyQt.QtWidgets import (
+    QAction,
+    QWidget,
+    QHBoxLayout,
+    QLabel,
+    QDoubleSpinBox,
+    QComboBox,
+)
 from qgis.PyQt.QtGui import QIcon
 from qgis.gui import QgsProjectionSelectionWidget
 from qgis.core import QgsProject
@@ -27,23 +34,25 @@ class RotatePlugin:
         self.crs_widget: Optional[QgsProjectionSelectionWidget] = None
         self.angle_input: Optional[QDoubleSpinBox] = None
         self.mode_combo: Optional[QComboBox] = None
-    
+
     def initGui(self):
         icon_path = os.path.join(os.path.dirname(__file__), "better_rotate.svg")
-        self.action = QAction(QIcon(icon_path), "Better Rotate", self.iface.mainWindow())
+        self.action = QAction(
+            QIcon(icon_path), "Better Rotate", self.iface.mainWindow()
+        )
         self.action.setStatusTip("Rotate features with custom coordinate system")
         self.action.setToolTip("Click to select/rotate. Ctrl+Click to set center. ")
         self.action.setCheckable(True)
         self.action.triggered.connect(self.activateTool)
-        
+
         self.toolbar.addAction(self.action)
-        
+
         self.tool = RotateMapTool(self, self.canvas, self.iface)
         self.tool.deactivated.connect(self.onToolDeactivated)
 
         self.iface.currentLayerChanged.connect(self.onCurrentLayerChanged)
         self.onCurrentLayerChanged(self.iface.activeLayer())
-    
+
     @staticmethod
     def _disconnect_helper(signal, slot) -> None:
         try:
@@ -142,7 +151,7 @@ class RotatePlugin:
         self.crs_widget = None
         self.angle_input = None
         self.mode_combo = None
-    
+
     def onToolDeactivated(self):
         if self.action and self.action.isChecked():
             self.action.setChecked(False)
@@ -152,7 +161,7 @@ class RotatePlugin:
     def deactivateTool(self):
         if self.canvas.mapTool() == self.tool:
             self.canvas.unsetMapTool(self.tool)
-    
+
     def getTargetCrs(self):
         if not self.crs_widget:
             return QgsProject.instance().crs()
@@ -161,13 +170,13 @@ class RotatePlugin:
     def getRotationMode(self) -> RotationMode:
         if not self.mode_combo:
             return "group"
-        return (self.mode_combo.currentData() or "group")
-    
+        return self.mode_combo.currentData() or "group"
+
     def getRotationAngle(self):
         if not self.angle_input:
             return 0.0
         return float(self.angle_input.value())
-    
+
     def updateAngleWidget(self, angle):
         if not self.angle_input:
             return
@@ -196,9 +205,9 @@ class RotatePlugin:
         if self.action:
             self.iface.removeToolBarIcon(self.action)
             self.action = None
-        
+
         self._disposeInputWidget()
-        
+
         # Clean up tool
         if self.tool:
             if self.canvas.mapTool() == self.tool:

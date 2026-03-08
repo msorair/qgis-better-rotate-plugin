@@ -2,7 +2,7 @@
 
 A small QGIS plugin that extends the built-in rotate feature tool.
 
-![Better Rotate](https://gist.github.com/user-attachments/assets/b584fb46-655b-482e-9bb0-f3d65d9546f5)
+![Better Rotate](./better_rotate.png)
 
 ## Features
 
