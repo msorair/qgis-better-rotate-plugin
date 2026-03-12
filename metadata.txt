@@ -2,7 +2,7 @@
 name=Better Rotate
 qgisMinimumVersion=3.26
 description=Advanced rotation tool with custom coordinate system and rotation center
-version=1.0.0
+version=1.0.1
 author=msorair
 email=sorair42@gmail.com
 icon=better_rotate.svg
@@ -27,4 +27,5 @@ tags=rotate,vector
 hasProcessingProvider=False
 experimental=False
 changelog=
+    1.0.1 - Update readme
     1.0.0 - First Commit
