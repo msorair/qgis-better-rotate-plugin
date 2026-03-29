@@ -13,6 +13,7 @@ from qgis.core import (
     QgsRectangle,
     QgsVectorLayer,
     QgsFeature,
+    Qgis
 )
 from qgis.gui import QgsMapTool, QgsVertexMarker, QgsRubberBand
 from qgis.PyQt.QtCore import Qt, pyqtSignal
@@ -51,7 +52,7 @@ class RotateMapTool(QgsMapTool):
         super().__init__(canvas)
         self.plugin = plugin
         self.iface = iface
-        self.canvas = canvas
+        self.canvas_ = canvas
 
         self.layer: Optional[QgsVectorLayer] = None
         self._listening_layer_change = False
@@ -64,7 +65,7 @@ class RotateMapTool(QgsMapTool):
         self.start_point: Optional[QgsPointXY] = None
         self.features_to_rotate: list[QgsFeature] = []
         self.rubber_band: Optional[QgsRubberBand] = None
-        self._rubber_geom_type = QgsWkbTypes.PolygonGeometry
+        self._rubber_geom_type = Qgis.GeometryType.Polygon
         self.start_angle: float = 0.0
         self.current_angle_delta: float = 0.0
 
@@ -110,10 +111,10 @@ class RotateMapTool(QgsMapTool):
 
     def _onActiveLayerChanged(self, new_layer):
         # If the active layer changes during an interaction, cancel to avoid CRS/feature mismatches.
-        if self.canvas.mapTool() is not self:
+        if self.canvas_.mapTool() is not self:
             return
 
-        if not self.layer:
+        if self.layer is None:
             self.layer = new_layer
             return
 
@@ -153,7 +154,7 @@ class RotateMapTool(QgsMapTool):
 
     def _onSelectionChanged(self, *args):
         # Keep tool state consistent with layer selection.
-        if self.canvas.mapTool() is not self:
+        if self.canvas_.mapTool() is not self:
             return
 
         layer = self._getLayer()
@@ -170,7 +171,7 @@ class RotateMapTool(QgsMapTool):
 
         if not self.features_to_rotate:
             if self.center_marker:
-                self.canvas.scene().removeItem(self.center_marker)
+                self.canvas_.scene().removeItem(self.center_marker)
                 self.center_marker = None
             if self.rubber_band:
                 self.rubber_band.reset(self._rubber_geom_type)
@@ -200,7 +201,7 @@ class RotateMapTool(QgsMapTool):
             self.features_to_rotate = []
             self.rotation_center = None
             if self.center_marker:
-                self.canvas.scene().removeItem(self.center_marker)
+                self.canvas_.scene().removeItem(self.center_marker)
                 self.center_marker = None
 
     def _getLayer(self):
@@ -210,7 +211,7 @@ class RotateMapTool(QgsMapTool):
         return self.plugin.getRotationMode()
 
     def _getTransforms(self, layer, target_crs):
-        canvas_crs = self.canvas.mapSettings().destinationCrs()
+        canvas_crs = self.canvas_.mapSettings().destinationCrs()
 
         def crs_key(crs):
             return crs.authid() or str(crs.srsid()) or crs.toWkt()
@@ -301,11 +302,11 @@ class RotateMapTool(QgsMapTool):
             rotation_center = QgsGeometry.unaryUnion(geometries).centroid().asPoint()
 
         layer = self._getLayer()
-        if not layer:
+        if layer is None:
             return
         ct = QgsCoordinateTransform(
             layer.crs(),
-            self.canvas.mapSettings().destinationCrs(),
+            self.canvas_.mapSettings().destinationCrs(),
             QgsProject.instance(),
         )
         self.rotation_center = ct.transform(rotation_center)
@@ -315,36 +316,34 @@ class RotateMapTool(QgsMapTool):
         if not point:
             return
         if self.center_marker is None:
-            self.center_marker = QgsVertexMarker(self.canvas)
-            self.center_marker.setIconType(QgsVertexMarker.ICON_CROSS)
+            self.center_marker = QgsVertexMarker(self.canvas_)
+            self.center_marker.setIconType(QgsVertexMarker.IconType.ICON_CROSS)
             self.center_marker.setColor(QColor(255, 0, 0))
             self.center_marker.setIconSize(15)
             self.center_marker.setPenWidth(3)
         self.center_marker.setCenter(point)
 
     def canvasReleaseEvent(self, e):
+        if e is None:
+            return
         # Right click to cancel
-        if e.button() == Qt.RightButton:
+        if e.button() == Qt.MouseButton.RightButton:
             self.cancelOperation()
             return
 
-        if e.button() != Qt.LeftButton:
+        if e.button() != Qt.MouseButton.LeftButton:
             return
 
         point = e.mapPoint()
 
         # Ctrl+Click to set custom center
-        if e.modifiers() & Qt.ControlModifier:
+        if e.modifiers() & Qt.KeyboardModifier.ControlModifier:
             if self.features_to_rotate:
                 if self._getRotationMode() == "individual":
-                    self.iface.messageBar().pushMessage(
-                        "Individual mode: custom center ignored", level=0, duration=2
-                    )
                     return
                 self.rotation_center = point
                 self.updateCenterMarker(point)
                 self._clearCaches()
-                self.iface.messageBar().pushMessage("Center Set", level=0, duration=1)
             return
 
         # If already rotating, confirm rotation
@@ -366,7 +365,7 @@ class RotateMapTool(QgsMapTool):
                 self.calculateCenter()
             else:
                 # Identify feature at point
-                tolerance = self.canvas.mapUnitsPerPixel() * 5
+                tolerance = self.canvas_.mapUnitsPerPixel() * 5
                 search_rect_canvas = QgsRectangle(
                     point.x() - tolerance,
                     point.y() - tolerance,
@@ -374,7 +373,7 @@ class RotateMapTool(QgsMapTool):
                     point.y() + tolerance,
                 )
 
-                canvas_crs = self.canvas.mapSettings().destinationCrs()
+                canvas_crs = self.canvas_.mapSettings().destinationCrs()
                 layer_crs = lyr.crs()
                 ct = QgsCoordinateTransform(
                     canvas_crs, layer_crs, QgsProject.instance()
@@ -387,9 +386,6 @@ class RotateMapTool(QgsMapTool):
                     self.features_to_rotate = [found]
                     self.calculateCenter()
                 else:
-                    self.iface.messageBar().pushMessage(
-                        "No features found", level=0, duration=2
-                    )
                     return
 
         # 2. Start rotating state
@@ -397,7 +393,7 @@ class RotateMapTool(QgsMapTool):
             self.calculateCenter()
 
         layer = self._getLayer()
-        if layer:
+        if layer is not None:
             self._clearCaches()
             target_crs = self.plugin.getTargetCrs()
             self._ensureTargetGeomCache(layer, target_crs)
@@ -411,17 +407,11 @@ class RotateMapTool(QgsMapTool):
 
         self.createRubberBand()
         self.plugin.updateAngleWidget(0.0)
-        self.iface.messageBar().pushMessage(
-            "Rotate mode active. Click to finish, Right Click to cancel.",
-            level=0,
-            duration=2,
-        )
 
     def cancelOperation(self):
         self._resetInteractionState(True)
         self.plugin.updateAngleWidget(0.0)
         self._clearCaches()
-        self.iface.messageBar().pushMessage("Canceled", level=0, duration=1)
 
         lyr = self.iface.activeLayer()
         if lyr and lyr.selectedFeatureCount() > 0:
@@ -430,7 +420,7 @@ class RotateMapTool(QgsMapTool):
             self.calculateCenter()
 
     def canvasMoveEvent(self, e):
-        if not self.is_rotating or not self.rotation_center:
+        if not self.is_rotating or not self.rotation_center or e is None:
             return
 
         point = e.mapPoint()
@@ -452,7 +442,7 @@ class RotateMapTool(QgsMapTool):
             if not self.rotation_center:
                 self.calculateCenter()
             layer = self._getLayer()
-            if layer and self.rotation_center:
+            if layer is not None and self.rotation_center:
                 target_crs = self.plugin.getTargetCrs()
                 self._ensureTargetGeomCache(layer, target_crs)
             self.createRubberBand()  # Ensure rubber band exists
@@ -466,11 +456,13 @@ class RotateMapTool(QgsMapTool):
             self.applyRotation()
 
     def keyPressEvent(self, e):
-        if e.key() == Qt.Key_Escape:
+        if e is None:
+            return
+        if e.key() == Qt.Key.Key_Escape:
             self.plugin.deactivateTool()
             return
 
-        if e.key() == Qt.Key_Return or e.key() == Qt.Key_Enter:
+        if e.key() == Qt.Key.Key_Return or e.key() == Qt.Key.Key_Enter:
             if self.features_to_rotate:
                 # Use value from widget in case it was typed manually
                 angle = self.plugin.getRotationAngle()
@@ -484,9 +476,9 @@ class RotateMapTool(QgsMapTool):
             self._rubber_geom_type = (
                 QgsWkbTypes.geometryType(layer.wkbType())
                 if layer is not None
-                else QgsWkbTypes.PolygonGeometry
+                else Qgis.GeometryType.Polygon
             )
-            self.rubber_band = QgsRubberBand(self.canvas, self._rubber_geom_type)
+            self.rubber_band = QgsRubberBand(self.canvas_, self._rubber_geom_type)
             self.rubber_band.setColor(QColor(255, 0, 0, 100))
             self.rubber_band.setWidth(2)
             self.rubber_band.show()
@@ -507,7 +499,7 @@ class RotateMapTool(QgsMapTool):
 
         target_crs = self.plugin.getTargetCrs()
         layer = self._getLayer()
-        if not layer:
+        if layer is None:
             return
 
         transforms = self._getTransforms(layer, target_crs)
@@ -550,8 +542,8 @@ class RotateMapTool(QgsMapTool):
 
     def applyRotation(self):
         lyr = self._getLayer()
-        if not lyr or not lyr.isEditable():
-            self.iface.messageBar().pushMessage("Layer not editable", level=2)
+        if lyr is None or not lyr.isEditable():
+            self.iface.messageBar().pushMessage("Layer not editable", level=Qgis.MessageLevel.Warning, duration=2)
             return
 
         angle = self.current_angle_delta
@@ -597,10 +589,9 @@ class RotateMapTool(QgsMapTool):
                 lyr.changeGeometry(feat.id(), geom)
 
             lyr.endEditCommand()
-            self.iface.messageBar().pushMessage(f"Rotated {angle:.2f}°", level=0)
         except Exception as e:
             lyr.destroyEditCommand()
-            self.iface.messageBar().pushMessage(f"Error: {e}", level=2)
+            self.iface.messageBar().pushMessage(f"Error: {e}", level=Qgis.MessageLevel.Warning, duration=2)
             return
 
         self.is_rotating = False
@@ -610,7 +601,7 @@ class RotateMapTool(QgsMapTool):
 
         self._clearCaches()
 
-        self.canvas.refresh()
+        self.canvas_.refresh()
 
         self.features_to_rotate = []
         for fid in feature_ids:

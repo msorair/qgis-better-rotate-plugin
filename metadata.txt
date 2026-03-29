@@ -1,8 +1,9 @@
 [general]
 name=Better Rotate
-qgisMinimumVersion=3.26
+qgisMinimumVersion=3.30
+qgisMaximumVersion=4.99
 description=Advanced rotation tool with custom coordinate system and rotation center
-version=1.0.1
+version=1.1.0
 author=msorair
 email=sorair42@gmail.com
 icon=better_rotate.svg
@@ -19,8 +20,8 @@ about=
 
 
 
-tracker=https://github.com/msorair/qgis_better_rotate_tool/issues
-repository=https://github.com/msorair/qgis_better_rotate_tool
+tracker=https://github.com/msorair/qgis-better-rotate-plugin/issues
+repository=https://github.com/msorair/qgis-better-rotate-plugin
 category=Plugins
 homepage=https://github.com/msorair/qgis-better-rotate-plugin/#readme
 tags=rotate,vector
@@ -29,3 +30,4 @@ experimental=False
 changelog=
     1.0.1 - Update readme
     1.0.0 - First Commit
+    1.1.0 - Support QGIS 4.x

@@ -73,6 +73,8 @@ class RotatePlugin:
     def updateActionStatus(self) -> None:
         layer = self.iface.activeLayer()
         enabled = layer is not None and layer.isEditable()
+        if self.action is None:
+            return
         if self.action:
             self.action.setEnabled(enabled)
         if not enabled and self.action.isChecked():
@@ -99,8 +101,8 @@ class RotatePlugin:
         # Target CRS
         crs_label = QLabel("Target CRS:")
         self.crs_widget = QgsProjectionSelectionWidget()
-        self.crs_widget.setOptionVisible(QgsProjectionSelectionWidget.LayerCrs, True)
-        self.crs_widget.setOptionVisible(QgsProjectionSelectionWidget.ProjectCrs, True)
+        self.crs_widget.setOptionVisible(QgsProjectionSelectionWidget.CrsOption.LayerCrs, True)
+        self.crs_widget.setOptionVisible(QgsProjectionSelectionWidget.CrsOption.ProjectCrs, True)
         self.crs_widget.setMinimumWidth(250)
 
         # Rotation mode
@@ -135,12 +137,7 @@ class RotatePlugin:
         self.input_widget.setLayout(layout)
         self.iface.addUserInputWidget(self.input_widget)
 
-        # Init CRS to layer CRS if possible
-        lyr = self.iface.activeLayer()
-        if lyr:
-            self.crs_widget.setCrs(lyr.crs())
-        else:
-            self.crs_widget.setCrs(QgsProject.instance().crs())
+        self.crs_widget.setCrs(QgsProject.instance().crs())
 
     def _disposeInputWidget(self):
         if self.input_widget:
